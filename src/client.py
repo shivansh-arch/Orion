@@ -1,7 +1,8 @@
 
 import os
 import dotenv 
-class Orionclinet:
+from openai import OpenAI
+class OrionClient:
     def __init__(self):
         dotenv.load_dotenv()
         self.api_key=os.getenv("OPENROUTER_API_KEY")
@@ -10,7 +11,8 @@ class Orionclinet:
             base_url="https://openrouter.ai/api/v1",
             api_key=self.api_key
         )
-        self.model = "openrouter/auto"
+        
+        self.model = "nvidia/nemotron-3-ultra-550b-a55b:free"
     def chat(self,messages,temperature=0.7,max_tokens=1000):
             response = self.client.chat.completions.create(
                 model=self.model ,
