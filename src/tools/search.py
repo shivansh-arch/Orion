@@ -6,18 +6,29 @@ from dotenv import load_dotenv
 load_dotenv()
 
 api_key = os.getenv("EXA_API_KEY")
+
+if not api_key:
+    raise ValueError("EXA_API_KEY not found in .env")
+
 exa = Exa(api_key=api_key)
+
+HEADERS = {
+    "User-Agent": "OrionAgent/1.0 (learning project)"
+}
 
 
 def deep_search(query):
     """
-    Perform a web search using Exa.
+    Perform a web search using Exa and return the top results.
     """
-    results = exa.search(
+    results = exa.search_and_contents(
         query,
         num_results=3,
-        use_autoprompt=True
+        text={"max_characters": 500}
     )
+
+    if not results.results:
+        return "No search results found."
 
     output = []
 
@@ -25,7 +36,7 @@ def deep_search(query):
         output.append(
             f"Title: {result.title}\n"
             f"URL: {result.url}\n"
-            f"Snippet: {result.text}\n"
+            f"Content:\n{result.text}\n"
         )
 
     return "\n" + ("-" * 60 + "\n").join(output)
@@ -33,32 +44,71 @@ def deep_search(query):
 
 def simple_search(query):
     """
-    Fallback to Wikipedia summary.
+    Search Wikipedia and return the summary of the best matching page.
     """
-    url = (
-        "https://en.wikipedia.org/api/rest_v1/page/summary/"
-        f"{query.replace(' ', '_')}"
-    )
+    try:
+        search_url = "https://en.wikipedia.org/w/api.php"
 
-    response = requests.get(url, timeout=10)
+        params = {
+            "action": "query",
+            "list": "search",
+            "srsearch": query,
+            "format": "json"
+        }
 
-    if response.status_code != 200:
-        return "No Wikipedia article found."
+        response = requests.get(
+            search_url,
+            params=params,
+            headers=HEADERS,
+            timeout=10
+        )
+        response.raise_for_status()
 
-    data = response.json()
+        results = response.json()["query"]["search"]
 
-    return data.get("extract", "No summary available.")
+        if not results:
+            return "No Wikipedia article found."
+
+        title = results[0]["title"]
+
+        summary_url = (
+            "https://en.wikipedia.org/api/rest_v1/page/summary/"
+            f"{title.replace(' ', '_')}"
+        )
+
+        summary_response = requests.get(
+            summary_url,
+            headers=HEADERS,
+            timeout=10
+        )
+        summary_response.raise_for_status()
+
+        data = summary_response.json()
+
+        return (
+            f"Title: {title}\n\n"
+            f"{data.get('extract', 'No summary available.')}"
+        )
+
+    except Exception as e:
+        return f"Wikipedia error: {e}"
 
 
 def search(query, deep=True):
+    """
+    Try Exa first; fall back to Wikipedia if Exa fails.
+    """
     if deep:
         try:
             return deep_search(query)
-        except Exception:
+        except Exception as e:
+            print(f"Exa error: {e}")
+            print("Falling back to Wikipedia...\n")
             return simple_search(query)
 
     return simple_search(query)
 
 
 if __name__ == "__main__":
-    print(search("Large Language Models"))
+    query = input("Enter your search query: ")
+    print(search(query))
