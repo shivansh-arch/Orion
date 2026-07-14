@@ -1,6 +1,8 @@
 from src.client import OrionClient
 from src.agents.orchestrator import Orchestrator
 from src.planner import Planner
+from src.voice import listen, speak
+
 
 def main():
     client = OrionClient()
