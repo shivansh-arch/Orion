@@ -1,10 +1,10 @@
 from dotenv import load_dotenv
-load_dotenv()
 import os
 from openai import OpenAI
 class OrionClient:
     def __init__(self):
-        dotenv.load_dotenv()
+        load_dotenv()
+
         self.api_key=os.getenv("OPENROUTER_API_KEY")
         
         self.client=OpenAI(
