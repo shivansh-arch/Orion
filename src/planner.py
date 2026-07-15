@@ -36,7 +36,9 @@ class Planner:
             if verbose:
                 print(f"\nExecuting Task {i}/{len(tasks)}: {task}")
 
-            result = orchestrator.run(task, verbose=verbose)
+            result = orchestrator.run(task)
+            if result is None:
+                result = {"answer": "No response for this task."}
             results.append(result)
 
         return results

@@ -8,6 +8,9 @@ class Orchestrator:
         self.researcher = ResearcherAgent(client)
         self.coder = CoderAgent(client)
 
+        # Store the last selected agent
+        self.last_route = None
+
     def route(self, query):
         messages = [
             {
@@ -36,15 +39,19 @@ class Orchestrator:
         if route not in ("research", "code"):
             route = "research"
 
+        # Save the selected agent
+        self.last_route = route
+
         return route
 
-    def run(self, query, verbose=True):
-        agent = self.route(query)
-
-        if verbose:
-            print(f"Selected agent: {agent}")
-
-        if agent == "code":
-            return self.coder.run(query, verbose=verbose)
-
-        return self.researcher.run(query, verbose=verbose)
+    def run(self, query, verbose=False):
+        route = self.route(query)
+        print(f"Route: {route}")
+        
+        if route == "research":
+            result = self.researcher.run(query)
+        else:
+            result = self.coder.run(query)
+        
+        print(f"Result: {result}")  # add this
+        return result
