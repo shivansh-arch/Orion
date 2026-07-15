@@ -1,6 +1,6 @@
-
+from dotenv import load_dotenv
+load_dotenv()
 import os
-from dotenv import load_dotenv  
 from openai import OpenAI
 class OrionClient:
     def __init__(self):
