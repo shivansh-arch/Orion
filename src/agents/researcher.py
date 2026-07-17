@@ -50,29 +50,21 @@ class ResearcherAgent:
             "fetch_webpage": fetch_webpage
         }
 
-    def run(self, query, max_iterations=10, verbose=True):
+   def run(self, query, max_iterations=10, verbose=True):
 
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a research assistant. "
-                    "Use the available tools whenever they help answer the user's question."
-                )
-            },
-            {
-                "role": "user",
-                "content": query
-            }
-        ]
+        memory = Memory(self.client, max_messages=10)
+        memory.add("system", (
+            "You are a research assistant. "
+            "Use the available tools whenever they help answer the user's question."
+        ))
+        memory.add("user", query)
 
         for i in range(max_iterations):
-
             if verbose:
                 print(f"\nIteration {i + 1}/{max_iterations}")
 
             msg = self.client.chat_with_tools(
-                messages=messages,
+                messages=memory.get_messages(),
                 tools=self.tools_schemas,
                 temperature=0,
                 max_tokens=800
@@ -82,25 +74,22 @@ class ResearcherAgent:
             if not msg.tool_calls:
                 if verbose:
                     print(f"Assistant: {msg.content}")
+                return {"answer": msg.content, "iterations": i + 1}
 
-                return {
-                    "answer": msg.content,
-                    "iterations": i + 1
-                }
-
-            # Save assistant message
+            # --- save assistant's tool-call request into memory ---
             if hasattr(msg, "model_dump"):
-                messages.append(msg.model_dump())
+                dumped = msg.model_dump(exclude_none=True)
             else:
-                messages.append({
-                    "role": "assistant",
-                    "content": msg.content,
-                    "tool_calls": msg.tool_calls
-                })
+                dumped = {"role": "assistant", "content": msg.content, "tool_calls": msg.tool_calls}
 
-            # Execute each tool call
+            memory.add(
+                "assistant",
+                dumped.get("content"),
+                tool_calls=dumped.get("tool_calls")
+            )
+
+            # --- execute each tool call (uses original SDK msg, attribute access) ---
             for tc in msg.tool_calls:
-
                 fn_name = tc.function.name
                 fn_args = json.loads(tc.function.arguments or "{}")
 
@@ -114,20 +103,11 @@ class ResearcherAgent:
                     except Exception as e:
                         result = json.dumps({"error": str(e)})
                 else:
-                    result = json.dumps(
-                        {"error": f"Unknown tool '{fn_name}'"}
-                    )
+                    result = json.dumps({"error": f"Unknown tool '{fn_name}'"})
 
                 if verbose:
                     print(f"Tool result:\n{result}")
 
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "name": fn_name,
-                    "content": str(result)
-                })
+                memory.add("tool", str(result), tool_call_id=tc.id, name=fn_name)
 
-        return {
-            "error": "Max iterations reached without a final answer."
-        }
+        return {"error": "Max iterations reached without a final answer."}
