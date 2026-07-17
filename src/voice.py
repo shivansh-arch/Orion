@@ -2,7 +2,6 @@ import speech_recognition as sr
 import pyttsx3
 
 recognizer = sr.Recognizer()
-engine = pyttsx3.init()
 
 def listen():
     try:
@@ -31,8 +30,11 @@ def listen():
 
 def speak(text):
     print(f"Orion: {text}")
+    engine = pyttsx3.init()
     engine.say(text)
     engine.runAndWait()
+    engine.stop()
+
 if __name__ == "__main__":
     speak("Hello, I am Orion. Your personal AI assistant.")
     query = listen()
