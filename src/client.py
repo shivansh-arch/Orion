@@ -21,12 +21,11 @@ class OrionClient:
                 "Add it to .env or .streamlit/secrets.toml."
             )
 
-        self.client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
-        )
-
-        self.model = "tencent/hy3:free"
+       self.client = OpenAI(
+        base_url="https://api.cerebras.ai/v1",
+        api_key=cerebras_api_key,
+    )
+    self.model = "llama-3.3-70b"
 
     def chat(self, messages, temperature=0.7, max_tokens=1000):
         response = self.client.chat.completions.create(
