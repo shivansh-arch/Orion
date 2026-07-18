@@ -26,7 +26,7 @@ class OrionClient:
             api_key=api_key,
         )
 
-        self.model = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
+        self.model = "tencent/hy3:free"
 
     def chat(self, messages, temperature=0.7, max_tokens=1000):
         response = self.client.chat.completions.create(
