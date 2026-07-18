@@ -188,7 +188,7 @@ if prompt:
                     st.session_state.thinking = [
                         f"Completed in {result.get('iterations', 0)} iteration(s)"
                     ]
-
+                    st.session_state.tools = result.get("tools_used", [])
                     if hasattr(orchestrator, "last_route"):
                         st.session_state.agent = orchestrator.last_route
 
