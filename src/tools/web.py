@@ -1,25 +1,35 @@
 import requests
+import trafilatura
 from bs4 import BeautifulSoup
+
 
 def fetch_webpage(url):
     """
-    Fetch a webpage, remove HTML tags, and return clean text.
+    Fetch a webpage and return the main article text.
+    Falls back to BeautifulSoup extraction if Trafilatura
+    cannot identify the main content.
     """
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
 
-        soup = BeautifulSoup(response.content, "html.parser")
+        # Try content-aware extraction first
+        text = trafilatura.extract(response.text)
 
-        # Remove unwanted elements
-        for tag in soup(["script", "style"]):
-            tag.decompose()
+        # Fallback if no main content could be extracted
+        if text is None:
+            soup = BeautifulSoup(response.text, "html.parser")
 
-        # Extract clean text
-        text = soup.get_text(separator=" ", strip=True)
+            for tag in soup(["script", "style"]):
+                tag.decompose()
 
-        # Return first 2000 characters
+            text = soup.get_text(separator=" ", strip=True)
+
+        # Intentional token-budget limit
         return text[:2000]
 
     except Exception as e:
+        # NOTE:
+        # This catches network errors, parsing errors,
+        # and Trafilatura import/runtime errors alike.
         return f"Error fetching page: {e}"

@@ -1,6 +1,9 @@
 import speech_recognition as sr
 import pyttsx3
 
+
+
+
 recognizer = sr.Recognizer()
 
 def listen():
@@ -27,16 +30,15 @@ def listen():
     except Exception as e:
         print(f"Mic error: {e}")
         return None
-
 def speak(text):
-    print(f"Orion: {text}")
-    engine = pyttsx3.init()
+    engine = pyttsx3.init() 
     engine.say(text)
     engine.runAndWait()
-    engine.stop()
+
 
 if __name__ == "__main__":
     speak("Hello, I am Orion. Your personal AI assistant.")
     query = listen()
+    
     if query:
         speak(f"You said: {query}")

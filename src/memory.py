@@ -26,6 +26,14 @@ class Memory:
 
         if not self.messages:
             return
+        System_message=None
+        conversation=[]
+        
+        for msg in self.messages:
+            if(msg["role"]=="system"):
+                system_message=msg
+            else:
+                conversation.append(msg)
 
         text_only = []
 
@@ -81,13 +89,16 @@ class Memory:
 
         summary = response.strip()
 
-        self.messages = [
+        summar_messages = [
             {
                 "role": "assistant",
                 "content": f"Previous conversation summary:\n{summary}"
             }
         ]
-
+        self.message=[]
+        if system_message is not None:
+            self.messages.append(system_message)
+        self.messages.extend(summar_messages);
     def get_messages(self):
         """Return conversation, summarizing first if necessary."""
 
