@@ -26,7 +26,7 @@ class OrionClient:
             api_key=api_key,
         )
 
-        self.model = "gpt-oss-120b"
+        self.model = "gemma-4-31b"
 
     def chat(self, messages, temperature=0.7, max_tokens=1000):
         response = self.client.chat.completions.create(

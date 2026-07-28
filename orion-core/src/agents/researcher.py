@@ -1,6 +1,5 @@
 import json
 
-from src.memory import Memory
 from src.tools.search import search
 from src.tools.web import fetch_webpage
 
@@ -8,9 +7,6 @@ from src.tools.web import fetch_webpage
 class ResearcherAgent:
     def __init__(self, client):
         self.client = client
-
-        # Persistent conversation memory
-        self.memory = Memory(client, max_messages=10)
 
         self.tools_schemas = [
             {
@@ -54,19 +50,11 @@ class ResearcherAgent:
             "fetch_webpage": fetch_webpage
         }
 
-    def run(self, query, max_iterations=10, verbose=True):
+    def run(self, query, memory, max_iterations=10, verbose=True):
 
-        # Add system prompt only once
-        if not self.memory.messages:
-            self.memory.add(
-                "system",
-                (
-                    "You are a research assistant. "
-                    "Use the available tools whenever they help answer the user's question."
-                )
-            )
+        
 
-        self.memory.add("user", query)
+        memory.add("user", query)
 
         activity = ["Started research"]
         tools_used = []
@@ -79,7 +67,7 @@ class ResearcherAgent:
             activity.append(f"Iteration {i + 1}")
 
             msg = self.client.chat_with_tools(
-                messages=self.memory.get_messages(),
+                messages=memory.get_messages(),
                 tools=self.tools_schemas,
                 temperature=0,
                 max_tokens=800
@@ -93,7 +81,7 @@ class ResearcherAgent:
                 if verbose:
                     print(f"Assistant: {msg.content}")
 
-                self.memory.add("assistant", msg.content)
+                memory.add("assistant", msg.content)
 
                 activity.append("Generated final answer")
 
@@ -116,7 +104,7 @@ class ResearcherAgent:
                     "tool_calls": msg.tool_calls,
                 }
 
-            self.memory.add(
+            memory.add(
                 "assistant",
                 dumped.get("content"),
                 tool_calls=dumped.get("tool_calls")
@@ -155,7 +143,7 @@ class ResearcherAgent:
                 if verbose:
                     print(f"Tool result:\n{result}")
 
-                self.memory.add(
+                memory.add(
                     "tool",
                     str(result),
                     tool_call_id=tc.id,

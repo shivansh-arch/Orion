@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from src.client import OrionClient
 from src.agents.orchestrator import Orchestrator
+from src.memory import build_memory
 
 
 class QueryRequest(BaseModel):
@@ -11,10 +12,9 @@ class QueryRequest(BaseModel):
 
 app = FastAPI(
     title="Orion API",
-    version="1.0.0"
+    version="1.0.0",
 )
 
-# Create these once and reuse them
 client = OrionClient()
 orchestrator = Orchestrator(client)
 
@@ -28,7 +28,24 @@ def root():
 
 @app.post("/agent/run")
 def run_agent(request: QueryRequest):
-    result = orchestrator.run(request.query)
+
+    # Determine which agent should handle the request
+    route = orchestrator.route(request.query)
+
+    # Build request-scoped memory
+    memory = build_memory(
+        client=client,
+        history=None,      # Later replace with MongoDB conversation history
+        max_messages=10,
+    )
+
+    # Execute using the selected agent
+    result = orchestrator.run_route(
+        route=route,
+        query=request.query,
+        memory=memory,
+    )
+
     return {
         "response": result
     }

@@ -1,15 +1,11 @@
 import json
 
-from src.memory import Memory
 from src.tools.code_runner import run_python_code
 
 
 class CoderAgent:
     def __init__(self, client):
         self.client = client
-
-        # Persistent conversation memory
-        self.memory = Memory(client, max_messages=10)
 
         self.tools_schemas = [
             {
@@ -35,19 +31,10 @@ class CoderAgent:
             "run_python_code": run_python_code
         }
 
-    def run(self, query, max_iterations=10, verbose=True):
+    def run(self, query, memory, max_iterations=10, verbose=True):
 
-        # Add system prompt only once
-        if not self.memory.messages:
-            self.memory.add(
-                "system",
-                (
-                    "You are a coding assistant. "
-                    "Use the available tools whenever they help answer the user's question."
-                )
-            )
 
-        self.memory.add("user", query)
+        memory.add("user", query)
 
         activity = ["Started coding task"]
         tools_used = []
@@ -60,7 +47,7 @@ class CoderAgent:
             activity.append(f"Iteration {i + 1}")
 
             msg = self.client.chat_with_tools(
-                messages=self.memory.get_messages(),
+                messages=memory.get_messages(),
                 tools=self.tools_schemas,
                 temperature=0,
                 max_tokens=800
@@ -74,7 +61,7 @@ class CoderAgent:
                 if verbose:
                     print(f"Assistant: {msg.content}")
 
-                self.memory.add("assistant", msg.content)
+                memory.add("assistant", msg.content)
 
                 activity.append("Generated final answer")
 
@@ -97,7 +84,7 @@ class CoderAgent:
                     "tool_calls": msg.tool_calls,
                 }
 
-            self.memory.add(
+            memory.add(
                 "assistant",
                 dumped.get("content"),
                 tool_calls=dumped.get("tool_calls"),
@@ -136,7 +123,7 @@ class CoderAgent:
                 if verbose:
                     print(f"Tool result:\n{result}")
 
-                self.memory.add(
+                memory.add(
                     "tool",
                     str(result),
                     tool_call_id=tc.id,
