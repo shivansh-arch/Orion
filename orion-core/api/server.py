@@ -32,9 +32,13 @@ def run_agent(request: QueryRequest):
     # Determine which agent should handle the request
     route = orchestrator.route(request.query)
 
+    # Get the correct persona/system prompt for that route
+    system_prompt = orchestrator.get_system_prompt(route)
+
     # Build request-scoped memory
     memory = build_memory(
         client=client,
+        system_prompt=system_prompt,
         history=None,      # Later replace with MongoDB conversation history
         max_messages=10,
     )
