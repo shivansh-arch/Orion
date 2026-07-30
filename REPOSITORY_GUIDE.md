@@ -27,8 +27,7 @@ flowchart LR
     C --> L
     O --> L
     L --> P --> N --> U
-    
-```
+    ```
 
 Think of it like a company:
 
