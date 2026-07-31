@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.client import OrionClient
 from src.agents.orchestrator import Orchestrator
@@ -8,6 +8,7 @@ from src.memory import build_memory
 
 class QueryRequest(BaseModel):
     query: str
+    history: list[dict[str, str]] = Field(default_factory=list)
 
 
 app = FastAPI(
@@ -39,7 +40,7 @@ def run_agent(request: QueryRequest):
     memory = build_memory(
         client=client,
         system_prompt=system_prompt,
-        history=None,      # Later replace with MongoDB conversation history
+        history=request.history,
         max_messages=10,
     )
 
