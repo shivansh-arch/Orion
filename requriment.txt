@@ -1,0 +1,23 @@
+streamlit
+openai
+exa-py
+requests
+beautifulsoup4
+python-dotenv
+httpx
+pydantic
+numpy
+pandas
+tqdm
+
+# below: imported directly by api/server.py and src/tools/web.py, but were
+# missing from this file — a clean install would crash on import as soon as
+# you touched the FastAPI service or the web-fetch tool
+fastapi
+uvicorn
+trafilatura
+
+# below: only needed for `voice on` in main.py (local CLI use) — not
+# imported by api/server.py, skip these for a deployed/API-only install
+SpeechRecognition
+pyttsx3
