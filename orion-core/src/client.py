@@ -1,7 +1,5 @@
 from dotenv import load_dotenv
 import os
-import streamlit as st
-from streamlit.errors import StreamlitSecretNotFoundError
 from openai import OpenAI
 
 
@@ -9,24 +7,19 @@ class OrionClient:
     def __init__(self):
         load_dotenv()
 
-        # Try Streamlit secrets first
-        try:
-            api_key = st.secrets["OPENROUTER_API_KEY"]
-        except (KeyError, StreamlitSecretNotFoundError):
-            api_key = os.getenv("OPENROUTER_API_KEY")
+        api_key = os.getenv("GROQ_API_KEY") or os.getenv("YOUR_GROQ_API_KEY")
 
         if not api_key:
             raise ValueError(
-                "OPENROUTER_API_KEY is not configured. "
-                "Add it to .env or .streamlit/secrets.toml."
+                "GROQ_API_KEY is not configured. Add it to .env before running Orion."
             )
 
         self.client = OpenAI(
-            base_url="https://api.cerebras.ai/v1",
             api_key=api_key,
+            base_url="https://api.groq.com/openai/v1",
         )
 
-        self.model = "gemma-4-31b"
+        self.model = "openai/gpt-oss-20b"
 
     def chat(self, messages, temperature=0.7, max_tokens=1000):
         response = self.client.chat.completions.create(
@@ -34,6 +27,7 @@ class OrionClient:
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
+            extra_body={"include_reasoning": False},
         )
 
         content = response.choices[0].message.content
@@ -49,6 +43,7 @@ class OrionClient:
             tools=tools,
             temperature=temperature,
             max_tokens=max_tokens,
+            extra_body={"include_reasoning": False},
         )
 
         return response.choices[0].message

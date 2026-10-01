@@ -19,6 +19,8 @@ class Orchestrator:
             "When appropriate, use the Python execution tool to verify code.\n"
             "Write clean, correct, and well-explained code."
         ),
+        "show_activity": "Handles showing the user's recent GitHub/LeetCode activity.",
+        "make_post": "Handles generating a LinkedIn-style post from recent activity.",
     }
 
     def __init__(self, client):
@@ -32,9 +34,14 @@ class Orchestrator:
                 "role": "system",
                 "content": (
                     "You are a routing assistant.\n"
-                    "Classify the user's request as either "
-                    "'research' or 'code'.\n"
-                    "Reply with exactly one word: research or code."
+                    "Classify the user's request as one of 'research', 'code', "
+                    "'show_activity', or 'make_post'.\n"
+                    "Use 'show_activity' when the user wants to view or list their "
+                    "recent GitHub or LeetCode activity. Use 'make_post' when they "
+                    "want a LinkedIn or social post based on that recent activity. "
+                    "Use 'research' for factual questions or web research, and "
+                    "'code' for programming tasks.\n"
+                    "Reply with exactly one of those four route names."
                 ),
             },
             {
@@ -46,7 +53,7 @@ class Orchestrator:
         response = self.client.chat(
             messages=messages,
             temperature=0,
-            max_tokens=5,
+            max_tokens=50,
         )
 
         route = response.strip().lower()
@@ -69,6 +76,16 @@ class Orchestrator:
         """
         Execute a query using the already-selected route and prepared Memory.
         """
+
+        if route == "show_activity":
+            from src.content_agent.cli import show_activity
+
+            return show_activity()
+
+        if route == "make_post":
+            from src.content_agent.cli import run_post_flow
+
+            return run_post_flow()
 
         if route == "research":
             return self.researcher.run(

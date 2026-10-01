@@ -1,17 +1,25 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from src.content_agent.collector import collect_github_activity
 from src.content_agent.interviewer import gather_context
+from src.content_agent.writer import generate_post
+from src.content_agent.critic import critique_post
 
-activity = collect_github_activity()
-print(f"{len(activity)} items collected\n")
+item = {
+    "source": "leetcode",
+    "event_type": "PushEvent",
+    "timestamp": "2026-09-29T18:11:08+00:00",
+    "repo": "shivansh-arch/LeetCode-Question",
+    "message": "Diameter Of Binary Tree",
+}
 
-if not activity:
-    print("No activity to test against.")
-else:
-    item = activity[0]
-    print("Testing interview for:", item, "\n")
-    context = gather_context(item)
-    print("\n----- COLLECTED CONTEXT -----")
-    print(context)
+context = gather_context(item)
+post = generate_post(item, context)
+
+print("\n----- GENERATED POST -----")
+print(post)
+
+verdict = critique_post(post, item, context) # call critique_post with the right arguments
+
+print("\n----- CRITIC VERDICT -----")
+print(verdict)

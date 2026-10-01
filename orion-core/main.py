@@ -70,6 +70,7 @@ def main():
         else:
             # Decide which agent should answer
             route = orchestrator.route(query)
+            print(f"[debug] classified route: {route}")
 
             # Get the correct system prompt for that agent
             system_prompt = orchestrator.get_system_prompt(route)
@@ -86,6 +87,11 @@ def main():
                 query=query,
                 memory=memory,
             )
+
+            # Content routes print their own user-friendly output in
+            # content_agent.cli, so do not print their raw return values.
+            if route in {"show_activity", "make_post"}:
+                continue
 
             print(f"\nResult: {result}")
 
