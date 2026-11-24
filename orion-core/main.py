@@ -2,7 +2,20 @@ from src.client import OrionClient
 from src.agents.orchestrator import Orchestrator
 from src.memory import build_memory
 from src.planner import Planner
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.panel import Panel
+
 from src.voice import listen, speak
+
+console = Console()
+
+
+def print_result(result):
+    answer = (result.get("answer") or "").strip() or "*(empty answer)*"
+    tools = ", ".join(result.get("tools_used") or []) or "none"
+    console.print(Panel(Markdown(answer), title="Orion", border_style="cyan"))
+    console.print(f"[dim]tools: {tools} | iterations: {result.get('iterations', '?')}[/dim]\n")
 
 
 def main():
@@ -60,7 +73,7 @@ def main():
                 start=1,
             ):
                 print(f"\nTask {i}: {task}")
-                print(f"Result: {res}")
+                print_result(res)
 
                 output.append(str(res.get("answer", res)))
 
@@ -93,7 +106,7 @@ def main():
             if route in {"show_activity", "make_post"}:
                 continue
 
-            print(f"\nResult: {result}")
+            print_result(result)
 
             if voice_mode:
                 speak(result.get("answer", ""))

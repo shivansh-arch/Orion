@@ -16,6 +16,7 @@ tqdm
 fastapi
 uvicorn
 trafilatura
+rich
 
 # below: only needed for `voice on` in main.py (local CLI use) — not
 # imported by api/server.py, skip these for a deployed/API-only install
