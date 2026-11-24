@@ -8,6 +8,9 @@ from bs4 import BeautifulSoup
 
 MAX_REDIRECTS = 5
 
+# Sites like Wikipedia reject requests that have no User-Agent (403).
+HEADERS = {"User-Agent": "OrionAgent/1.0 (learning project)"}
+
 
 class BlockedURLError(Exception):
     pass
@@ -44,7 +47,7 @@ def _get_public(url):
     """GET a URL, re-checking the destination before every redirect hop."""
     for _ in range(MAX_REDIRECTS + 1):
         _check_url_is_public(url)
-        response = requests.get(url, timeout=10, allow_redirects=False)
+        response = requests.get(url, headers=HEADERS, timeout=10, allow_redirects=False)
 
         if response.is_redirect:
             url = urljoin(url, response.headers["Location"])
