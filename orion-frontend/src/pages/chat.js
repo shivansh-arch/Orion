@@ -172,6 +172,17 @@ export function init() {
 
   loadConversations();
 
+  chatMessages.addEventListener('click', e => {
+    const btn = e.target.closest('.copy-code-btn');
+    if (!btn) return;
+    const code = btn.closest('.code-block')?.querySelector('code');
+    if (!code) return;
+    navigator.clipboard.writeText(code.textContent).then(() => {
+      btn.textContent = 'check';
+      setTimeout(() => { btn.textContent = 'content_copy'; }, 1500);
+    });
+  });
+
   // Navigation
   document.querySelectorAll('[data-nav]').forEach(el => {
     el.addEventListener('click', () => navigate('#/' + el.dataset.nav));
@@ -332,7 +343,7 @@ export function init() {
       item.innerHTML =
         '<span class="material-symbols-outlined text-sm flex-shrink-0">chat_bubble</span>' +
         '<span class="text-sm truncate flex-1">' + _escapeHtml(c.title || 'Untitled') + '</span>' +
-        '<button class="delete-conv-btn opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition-all p-0.5" data-id="' + c._id + '">' +
+        '<button class="delete-conv-btn opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition-all p-0.5">' +
           '<span class="material-symbols-outlined text-sm">close</span>' +
         '</button>';
       item.addEventListener('click', e => {
