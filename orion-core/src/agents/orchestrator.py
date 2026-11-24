@@ -53,7 +53,8 @@ class Orchestrator:
         response = self.client.chat(
             messages=messages,
             temperature=0,
-            max_tokens=50,
+            max_tokens=300,
+            reasoning_effort="low",
         )
 
         route = response.strip().lower()

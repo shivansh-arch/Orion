@@ -21,13 +21,17 @@ class OrionClient:
 
         self.model = "openai/gpt-oss-20b"
 
-    def chat(self, messages, temperature=0.7, max_tokens=1000):
+    def chat(self, messages, temperature=0.7, max_tokens=1000, reasoning_effort=None):
+        extra_body = {"include_reasoning": False}
+        if reasoning_effort is not None:
+            extra_body["reasoning_effort"] = reasoning_effort
+
         response = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
-            extra_body={"include_reasoning": False},
+            extra_body=extra_body,
         )
 
         content = response.choices[0].message.content
