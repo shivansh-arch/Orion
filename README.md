@@ -105,6 +105,7 @@ Create `orion-core/.env`:
 ```
 GROQ_API_KEY=your-groq-key
 EXA_API_KEY=your-exa-key
+ORION_INTERNAL_KEY=same-random-string-as-in-the-node-env
 # only needed for the experimental content_agent:
 GITHUB_TOKEN=your-github-token
 ```
@@ -118,9 +119,12 @@ MONGO_URI=your-mongodb-atlas-uri
 JWT_SECRET=any-long-random-string
 PORT=5000
 ORION_BACKEND_URL=http://127.0.0.1:8000
+ORION_INTERNAL_KEY=same-random-string-as-in-the-core-env
 ```
 
-`ORION_BACKEND_URL` is the base URL of the Python API — the Node server appends `/agent/run` itself, so don't include it. The server refuses to start without `MONGO_URI` and `JWT_SECRET`.
+`ORION_BACKEND_URL` is the base URL of the Python API — the Node server appends `/agent/run` itself, so don't include it. The server refuses to start without `MONGO_URI`, `JWT_SECRET` and `ORION_INTERNAL_KEY`.
+
+`ORION_INTERNAL_KEY` is a shared secret: Node sends it with every request and the Python API rejects calls without it, so nobody can skip Node's login by calling the Python API directly. Use the same value in both files — generate one with `python -c "import secrets; print(secrets.token_urlsafe(32))"`.
 
 ### Option A — Docker Compose
 
@@ -130,7 +134,7 @@ From the repo root, with both `.env` files in place:
 docker compose up --build
 ```
 
-The web client is at http://localhost:5173, the Node API at http://localhost:5000, and the Python API at http://localhost:8000. Compose overrides `ORION_BACKEND_URL` and the frontend's proxy target so the containers reach each other by service name.
+The web client is at http://localhost:5173 and the Node API at http://localhost:5000. The Python API is deliberately not published to the host — only the Node container can reach it. Compose overrides `ORION_BACKEND_URL` and the frontend's proxy target so the containers reach each other by service name.
 
 ### Option B — Run each service locally
 

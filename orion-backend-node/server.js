@@ -26,6 +26,10 @@ if (!process.env.MONGO_URI) {
     throw new Error("MONGO_URI environment variable is missing.");
 }
 
+if (!process.env.ORION_INTERNAL_KEY) {
+    throw new Error("ORION_INTERNAL_KEY environment variable is missing.");
+}
+
 // ---------- MongoDB ----------
 mongoose
     .connect(process.env.MONGO_URI)
@@ -243,6 +247,7 @@ app.post("/chat", auth, async (req, res) => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "X-Orion-Internal-Key": process.env.ORION_INTERNAL_KEY,
                 },
                 body: JSON.stringify({
                     query: userMessage,

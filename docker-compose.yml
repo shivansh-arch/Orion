@@ -21,8 +21,7 @@ services:
 
   core:
     build: ./orion-core
-    ports:
-      - "8000:8000"
+    # No published ports: only the backend can reach core over the compose network.
     env_file:
       - ./orion-core/.env
     environment:
