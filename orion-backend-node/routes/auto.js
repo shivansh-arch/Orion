@@ -6,16 +6,51 @@ const User = require("../model/User");
 
 const router = express.Router();
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// bcrypt ignores everything after 72 bytes, so longer passwords would silently match on their prefix.
+const MAX_PASSWORD_BYTES = 72;
+
+function readCredentials(body) {
+    const { email, password } = body || {};
+    // Strings only: an object like {"$ne": null} would be run as a MongoDB query operator.
+    if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
+        return null;
+    }
+    return { email: email.trim().toLowerCase(), password };
+}
+
+function passwordProblem(password) {
+    if (password.length < 8) return "Password must be at least 8 characters.";
+    if (Buffer.byteLength(password, "utf8") > MAX_PASSWORD_BYTES) return "Password must be at most 72 bytes.";
+    if (!/[A-Z]/.test(password)) return "Password must include an uppercase letter.";
+    if (!/[0-9]/.test(password)) return "Password must include a number.";
+    if (!/[^A-Za-z0-9]/.test(password)) return "Password must include a symbol.";
+    return null;
+}
+
 
 // POST /signup
 router.post("/signup", async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const credentials = readCredentials(req.body);
 
-        if (!email || !password) {
+        if (!credentials) {
             return res.status(400).json({
                 error: "Email and password are required.",
             });
+        }
+
+        const { email, password } = credentials;
+
+        if (!EMAIL_PATTERN.test(email)) {
+            return res.status(400).json({
+                error: "Please enter a valid email address.",
+            });
+        }
+
+        const problem = passwordProblem(password);
+        if (problem) {
+            return res.status(400).json({ error: problem });
         }
 
         const existingUser = await User.findOne({ email });
@@ -51,13 +86,15 @@ router.post("/signup", async (req, res) => {
 // POST /login
 router.post("/login", async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const credentials = readCredentials(req.body);
 
-        if (!email || !password) {
+        if (!credentials) {
             return res.status(400).json({
                 error: "Email and password are required.",
             });
         }
+
+        const { email, password } = credentials;
 
         const user = await User.findOne({ email });
 
