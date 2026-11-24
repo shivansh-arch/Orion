@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const mongoose = require("mongoose");
+const { rateLimit } = require("express-rate-limit");
 
 const auth = require("./middleware/auth");
 const authRoutes = require("./routes/auto");
@@ -41,7 +42,27 @@ mongoose
         process.exit(1);
     });
 
+// ---------- Rate Limits ----------
+const FIFTEEN_MINUTES = 15 * 60 * 1000;
+
+function limiter(options) {
+    return rateLimit({
+        standardHeaders: "draft-8",
+        legacyHeaders: false,
+        message: { error: "Too many requests. Please wait and try again." },
+        ...options,
+    });
+}
+
+// Only failed logins count, so a busy shared IP can still sign in normally.
+const loginLimiter = limiter({ windowMs: FIFTEEN_MINUTES, limit: 10, skipSuccessfulRequests: true });
+const signupLimiter = limiter({ windowMs: FIFTEEN_MINUTES, limit: 10 });
+// Keyed by user, not IP: every chat message costs LLM and search calls.
+const chatLimiter = limiter({ windowMs: 60 * 1000, limit: 20, keyGenerator: (req) => req.user.id });
+
 // ---------- Routes ----------
+app.use("/auth/login", loginLimiter);
+app.use("/auth/signup", signupLimiter);
 app.use("/auth", authRoutes);
 
 // ---------- Protected Chat Route ----------
@@ -157,7 +178,8 @@ app.delete("/conversations/:id", auth, async (req, res) => {
     }
 });
 
-app.post("/chat", auth, async (req, res) => {
+app.post("/chat", auth, chatLimiter, async (req, res) => {
+    const startedAt = Date.now();
     try {
         if (!req.user || !req.user.id) {
             return res.status(401).json({
@@ -169,9 +191,6 @@ app.post("/chat", auth, async (req, res) => {
         const requestBody = req.body || {};
         const rawMessage = requestBody.message || requestBody.query;
         const incomingConversationId = requestBody.conversationId || requestBody.conversationID || requestBody.conversation_id;
-
-        console.log("Incoming chat body:", requestBody);
-        console.log("Conversation ID received:", incomingConversationId || "not provided");
 
         const userMessage = typeof rawMessage === "string" ? rawMessage.trim() : String(rawMessage || "").trim();
 
@@ -268,8 +287,8 @@ app.post("/chat", auth, async (req, res) => {
         }
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Orion backend error:", errorText);
+            // Status only: FastAPI validation errors echo the request input, i.e. user text.
+            console.error(`Orion backend error: status=${response.status} user=${req.user.id}`);
             return res.status(502).json({
                 error: "Unable to reach Orion backend.",
                 conversationId: currentConversationId.toString(),
@@ -289,8 +308,11 @@ app.post("/chat", auth, async (req, res) => {
             );
         }
 
-
-        console.log("Authenticated User:", req.user.id);
+        // Never log message text: only facts that help debugging.
+        console.log(
+            `chat user=${req.user.id} conversation=${currentConversationId} ` +
+            `chars=${userMessage.length} ms=${Date.now() - startedAt}`
+        );
 
         res.json({
             ...data,
