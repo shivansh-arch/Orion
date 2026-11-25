@@ -3,27 +3,44 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from .collector import collect_github_activity
+from datetime import datetime
+
+from rich.console import Console
+from rich.markup import escape
+from rich.panel import Panel
+
+from .collector import ACTIVITY_DAYS, collect_github_activity
 from .interviewer import gather_context
 from .writer import generate_post
 from .critic import critique_post
 
 
 
+console = Console()
+
+
 def show_activity():
-    """Print today's collected GitHub/LeetCode activity."""
+    """Print the recent GitHub/LeetCode activity, one title line per commit."""
     activity = collect_github_activity()
+    window = f"the last {ACTIVITY_DAYS} days"
 
     if not activity:
-        print("No activity in the last 24 hours.")
+        console.print(f"No activity in {window}.")
         return activity
 
-    print(f"{len(activity)} item(s) in the last 24 hours:\n")
+    lines = []
     for i, item in enumerate(activity, start=1):
-        print(f"{i}. [{item['source']}] {item['repo']}")
-        print(f"   {item['message']}")
-        print(f"   {item['timestamp']}\n")
+        when = datetime.fromisoformat(item["timestamp"]).strftime("%Y-%m-%d %H:%M UTC")
+        label = escape(f"{i}. [{item['source']}] {item['repo']}")
+        lines.append(f"[bold]{label}[/bold] [dim]· {when}[/dim]")
+        lines.extend(f"   • {escape(title)}" for title in item["titles"])
+        lines.append("")
 
+    console.print(Panel(
+        "\n".join(lines).rstrip(),
+        title=f"{len(activity)} item(s) in {window}",
+        border_style="cyan",
+    ))
     return activity
 
 

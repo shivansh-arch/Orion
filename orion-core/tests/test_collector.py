@@ -37,15 +37,27 @@ class CollectorAllowlistTests(unittest.TestCase):
         self.assertEqual([item["repo"] for item in activity], ["shivansh-arch/Orion"])
         get_push_messages.assert_called_once_with("shivansh-arch/Orion", "old-sha", "new-sha")
 
+    def test_push_keeps_full_messages_and_one_title_per_commit(self):
+        messages = ["Fix router\n\nLonger explanation.", "Add sandbox\n\nWhy it matters."]
+        with (
+            patch.object(collector, "fetch_recent_events", return_value=[github_event("shivansh-arch/Orion")]),
+            patch.object(collector, "get_push_messages", return_value=messages),
+        ):
+            [item] = collector.collect_github_activity()
+
+        self.assertEqual(item["titles"], ["Fix router", "Add sandbox"])
+        self.assertIn("Longer explanation.", item["message"])
+        self.assertIn("Why it matters.", item["message"])
+
     def test_direct_event_processing_rejects_disallowed_repo(self):
         with patch.object(collector, "get_push_messages") as get_push_messages:
-            result = collector.get_message_for_event(
+            result = collector.get_commits_for_event(
                 "PushEvent",
                 "other-owner/private-repo",
                 {"before": "old-sha", "head": "new-sha"},
             )
 
-        self.assertEqual(result, (None, None))
+        self.assertEqual(result, (None, []))
         get_push_messages.assert_not_called()
 
 
