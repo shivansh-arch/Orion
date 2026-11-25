@@ -20,7 +20,7 @@ def print_result(result):
 
 def main():
     client = OrionClient()
-    orchestrator = Orchestrator(client)
+    orchestrator = Orchestrator(client, enable_content_routes=True)
     planner = Planner(client)
 
     voice_mode = False
