@@ -15,6 +15,10 @@ export default {
         target: process.env.VITE_API_URL || 'http://localhost:5000',
         changeOrigin: true,
       },
+      '/github': {
+        target: process.env.VITE_API_URL || 'http://localhost:5000',
+        changeOrigin: true,
+      },
     },
   },
 };

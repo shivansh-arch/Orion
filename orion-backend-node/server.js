@@ -6,6 +6,8 @@ const { rateLimit } = require("express-rate-limit");
 
 const auth = require("./middleware/auth");
 const authRoutes = require("./routes/auto");
+const { createGithubRouter } = require("./routes/github");
+const { githubConfig } = require("./lib/githubOAuth");
 
 const Conversation=require("./model/Conversation");
 const Message=require("./model/Message");
@@ -64,6 +66,14 @@ const chatLimiter = limiter({ windowMs: 60 * 1000, limit: 20, keyGenerator: (req
 app.use("/auth/login", loginLimiter);
 app.use("/auth/signup", signupLimiter);
 app.use("/auth", authRoutes);
+
+// Starts without GitHub settings; the /github routes then answer 503.
+const github = githubConfig(process.env);
+if (!github) {
+    console.log("GitHub is not configured: /github routes are disabled.");
+}
+app.use("/github/connect", limiter({ windowMs: FIFTEEN_MINUTES, limit: 10 }));
+app.use("/github", createGithubRouter({ config: github }));
 
 // ---------- Protected Chat Route ----------
 const ORION_BACKEND_URL = process.env.ORION_BACKEND_URL || "http://127.0.0.1:8000";
